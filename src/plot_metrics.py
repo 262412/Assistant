@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def plot_training_curves(log_path='../logs/train_logs.npy', save_path='../result/training_metrics.png'):
     # 读取训练时记录的日志
     with open(log_path, 'rb') as f:
@@ -56,6 +57,7 @@ def plot_training_curves(log_path='../logs/train_logs.npy', save_path='../result
     plt.tight_layout()
     plt.savefig(save_path)
     plt.show()
+
 
 if __name__ == "__main__":
     plot_training_curves()

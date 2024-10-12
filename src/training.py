@@ -29,16 +29,19 @@ def compute_bleu(reference, hypothesis):
 def train_model(
     data_path='../data/preprocessed_data.txt',
     model_path='../models',
-    log_path='../logs/train_logs.npy'
+    log_path='../logs/train_logs.npy',
+    checkpoint_path=None  # 新增参数以接受模型检查点路径
 ):
-    # 初始化 GPT-2 分词器和模型
+    # 初始化 GPT-2 分词器
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
     # 添加特殊填充符号
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-    model = GPT2LMHeadModel.from_pretrained('gpt2')
+    # 加载已训练的模型，如果没有提供检查点则加载基础模型
+    model = GPT2LMHeadModel.from_pretrained(checkpoint_path) \
+        if checkpoint_path else GPT2LMHeadModel.from_pretrained('gpt2')
     model.resize_token_embeddings(len(tokenizer))
 
     # 读取并预处理文本数据
@@ -73,7 +76,7 @@ def train_model(
         args=training_args,
         train_dataset=tokenized_dataset,
         eval_dataset=tokenized_dataset,
-        compute_metrics=compute_metrics
+        compute_metrics=lambda eval_pred: compute_metrics(eval_pred, tokenizer)  # 传入 tokenizer
     )
 
     # 开始训练
@@ -109,4 +112,4 @@ def train_model(
 
 
 if __name__ == "__main__":
-    train_model()
+    train_model(checkpoint_path='../models/checkpoint')  # 修改为你的检查点路径
