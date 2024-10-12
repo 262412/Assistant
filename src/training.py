@@ -43,7 +43,7 @@ def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
     # 设置训练参数
     training_args = TrainingArguments(
         output_dir='../models',
-        num_train_epochs=1,
+        num_train_epochs=3,
         per_device_train_batch_size=4,
         per_device_eval_batch_size=8,
         warmup_steps=500,
