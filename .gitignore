@@ -62,4 +62,4 @@ typings/
 # big files
 *.safetensors
 # file ignore
-models/
+models
