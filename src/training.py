@@ -1,6 +1,7 @@
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, Trainer, TrainingArguments
 from torch.utils.data import Dataset
 import numpy as np
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from utils import compute_metrics  # 从 utils.py 导入 BLEU 和准确率计算函数
 
 
@@ -19,7 +20,17 @@ class CustomTextDataset(Dataset):
         }
 
 
-def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
+def compute_bleu(reference, hypothesis):
+    """使用 SmoothingFunction 计算 BLEU 分数"""
+    smooth_fn = SmoothingFunction().method1
+    return sentence_bleu(reference, hypothesis, smoothing_function=smooth_fn)
+
+
+def train_model(
+    data_path='../data/preprocessed_data.txt',
+    model_path='../models',
+    log_path='../logs/train_logs.npy'
+):
     # 初始化 GPT-2 分词器和模型
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
@@ -31,7 +42,7 @@ def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
     model.resize_token_embeddings(len(tokenizer))
 
     # 读取并预处理文本数据
-    with open("../data/preprocessed_data.txt", "r", encoding="utf-8") as f:
+    with open(data_path, "r", encoding="utf-8") as f:
         text_data = f.read().splitlines()
 
     # 对数据进行分词处理
@@ -42,7 +53,7 @@ def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
 
     # 设置训练参数
     training_args = TrainingArguments(
-        output_dir='../models',
+        output_dir=model_path,
         num_train_epochs=3,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=64,
@@ -69,29 +80,32 @@ def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
     trainer.train()
 
     # 获取训练过程中的损失和日志
-    train_loss = trainer.state.log_history
+    train_logs = trainer.state.log_history
 
-    # 格式化训练日志为字典
+    # 格式化日志并计算 BLEU 分数
     metrics = {
         'loss': [],
         'eval_accuracy': [],
         'eval_bleu': []
     }
 
-    # 提取损失和评估指标
-    for log in train_loss:
+    for log in train_logs:
         if 'loss' in log:
-            metrics['loss'].append((log['step'], log['loss']))
+            metrics['loss'].append(log['loss'])
         if 'eval_accuracy' in log:
             metrics['eval_accuracy'].append(log['eval_accuracy'])
-        if 'eval_bleu' in log:
-            metrics['eval_bleu'].append(log['eval_bleu'])
+        if 'eval_preds' in log and 'eval_labels' in log:
+            # 计算 BLEU 分数
+            hypothesis = tokenizer.decode(log['eval_preds'], skip_special_tokens=True).split()
+            reference = [tokenizer.decode(log['eval_labels'], skip_special_tokens=True).split()]
+            bleu_score = compute_bleu(reference, hypothesis)
+            metrics['eval_bleu'].append(bleu_score)
 
-    # 使用 NumPy 保存为字典格式，避免读取问题
+    # 保存训练日志
     np.save(log_path, metrics, allow_pickle=True)
 
     # 保存训练后的模型
-    trainer.save_model(save_path)
+    trainer.save_model(model_path)
 
 
 if __name__ == "__main__":
