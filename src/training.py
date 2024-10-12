@@ -43,16 +43,16 @@ def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
     # 设置训练参数
     training_args = TrainingArguments(
         output_dir='../models',
-        num_train_epochs=3,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=64,
+        num_train_epochs=1,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=8,
         warmup_steps=500,
         weight_decay=0.01,
         logging_dir='../logs',
         logging_steps=10,
         save_strategy="no",
         report_to='none',
-        evaluation_strategy="epoch",  # 每个 epoch 评估一次
+        evaluation_strategy="epoch",
         fp16=True
     )
 
@@ -61,27 +61,34 @@ def train_model(save_path='../models', log_path="../logs/train_logs.npy"):
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset,
-        eval_dataset=tokenized_dataset,  # 简化起见，使用相同数据集
-        compute_metrics=compute_metrics  # 自定义的评估函数
+        eval_dataset=tokenized_dataset,
+        compute_metrics=compute_metrics
     )
 
     # 开始训练
     trainer.train()
 
-    # 获取训练过程中的损失和指标
-    train_loss = trainer.state.log_history  # 获取训练日志
+    # 获取训练过程中的损失和日志
+    train_loss = trainer.state.log_history
 
-    # 保存训练日志
-    metrics = []
+    # 格式化训练日志为字典
+    metrics = {
+        'loss': [],
+        'eval_accuracy': [],
+        'eval_bleu': []
+    }
+
+    # 提取损失和评估指标
     for log in train_loss:
         if 'loss' in log:
-            metrics.append({
-                'step': log['step'],
-                'loss': log['loss']
-            })
+            metrics['loss'].append((log['step'], log['loss']))
+        if 'eval_accuracy' in log:
+            metrics['eval_accuracy'].append(log['eval_accuracy'])
+        if 'eval_bleu' in log:
+            metrics['eval_bleu'].append(log['eval_bleu'])
 
-    # 将指标转换为 NumPy 数组并保存
-    np.save(log_path, np.array(metrics))
+    # 使用 NumPy 保存为字典格式，避免读取问题
+    np.save(log_path, metrics, allow_pickle=True)
 
     # 保存训练后的模型
     trainer.save_model(save_path)

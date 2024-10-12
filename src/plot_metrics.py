@@ -3,43 +3,45 @@ import numpy as np
 
 
 def plot_training_curves(log_path='../logs/train_logs.npy', save_path='../result/training_metrics.png'):
-    # 读取训练时记录的日志
-    with open(log_path, 'rb'):
+    try:
         logs = np.load(log_path, allow_pickle=True).item()
-    # 检查日志内容
-    print("Loaded logs:", logs)
+        print("Loaded logs:", logs)
+    except Exception as e:
+        print(f"Error loading logs: {e}")
+        return
 
-    # 获取损失、准确率和 BLEU 分数
-    # 确保这些键在日志字典中存在
-    loss = logs.get('loss', None)  # 使用 get() 方法防止 KeyError
-    accuracy = logs.get('eval_accuracy', None)
-    bleu = logs.get('eval_bleu', None)
+    loss = logs.get('loss', [])
+    eval_accuracy = logs.get('eval_accuracy', [])
+    eval_bleu = logs.get('eval_bleu', [])
 
-    # 输出检查
-    print(f"Loss: {loss}, Accuracy: {accuracy}, BLEU: {bleu}")
+    if not loss:
+        print("No loss data found!")
+        return
 
-    # 绘制图表
-    epochs = range(1, len(loss) + 1)
+    epochs = [x[0] for x in loss]
+    loss_values = [x[1] for x in loss]
 
     plt.figure(figsize=(12, 6))
 
     plt.subplot(1, 3, 1)
-    plt.plot(epochs, loss, label='Loss')
+    plt.plot(epochs, loss_values, marker='o', label='Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training Loss')
 
-    plt.subplot(1, 3, 2)
-    plt.plot(epochs, accuracy, label='Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.title('Accuracy')
+    if eval_accuracy:
+        plt.subplot(1, 3, 2)
+        plt.plot(range(1, len(eval_accuracy) + 1), eval_accuracy, marker='o', label='Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy')
 
-    plt.subplot(1, 3, 3)
-    plt.plot(epochs, bleu, label='BLEU')
-    plt.xlabel('Epoch')
-    plt.ylabel('BLEU Score')
-    plt.title('BLEU Score')
+    if eval_bleu:
+        plt.subplot(1, 3, 3)
+        plt.plot(range(1, len(eval_bleu) + 1), eval_bleu, marker='o', label='BLEU Score')
+        plt.xlabel('Epoch')
+        plt.ylabel('BLEU Score')
+        plt.title('BLEU Score')
 
     plt.tight_layout()
     plt.savefig(save_path)
