@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import joblib
 import warnings
 
-data = pd.read_csv('../data/boston_house_price.csv')
+data = pd.read_csv('../../data/boston_house_price.csv')
 
 
 def ignore_warnings(func):
@@ -35,7 +35,7 @@ clf = Lasso(alpha=0.0005)
 score = scoring(clf)
 print("偏差：{:.4f}({:.4f})".format(score.mean(), score.std()))
 clf.fit(x, y)
-joblib.dump(clf, '../models/boston_lasso.pkl')
+joblib.dump(clf, '../../models/boston_lasso.pkl')
 print("特征总数：%d" % len(data.columns))
 print("嵌入式选择后，保留特征数：%d" % np.sum(clf.coef_ != 0))
 
@@ -69,7 +69,7 @@ def plot_learning_curve(estimator, title, x, y, cv=10, n_jobs=1, train_sizes=np.
 clf = Lasso(alpha=0.0005)
 plot_learning_curve(clf, "Lasso", x, y)
 plt.show()
-joblib.dump(clf, '../models/boston_lasso.pkl')
+joblib.dump(clf, '../../models/boston_lasso.pkl')
 print("模型保存成功！")
 
 # clf = joblib.load('../models/boston_lasso.pkl')

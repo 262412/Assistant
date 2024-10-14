@@ -62,7 +62,7 @@ def train_model(
         per_device_eval_batch_size=64,
         warmup_steps=500,
         weight_decay=0.01,
-        logging_dir='../logs',
+        logging_dir='../../logs',
         logging_steps=10,
         save_strategy="no",
         report_to='none',
@@ -112,4 +112,4 @@ def train_model(
 
 
 if __name__ == "__main__":
-    train_model(checkpoint_path='../models/checkpoint')  # 修改为你的检查点路径
+    train_model(checkpoint_path='../../models/checkpoint')  # 修改为你的检查点路径
